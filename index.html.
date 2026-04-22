@@ -185,7 +185,7 @@ body {
 <script src="https://tago.io">
 <script>
 
-const token = "d5d327b5-b402-4f2e-8fd3-f08d67986b2f";
+const token = "36a3de25-4d64-4f66-aab7-b5ca16161c78";
 
 function actualizar() {
 
