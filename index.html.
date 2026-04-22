@@ -182,7 +182,7 @@ body {
 
 <div class="calle"></div>
 <div class="linea"></div>
-
+<script src="https://tago.io">
 <script>
 
 const token = "d5d327b5-b402-4f2e-8fd3-f08d67986b2f";
@@ -252,7 +252,7 @@ function actualizar() {
 }
 
 setInterval(actualizar, 700);
-
+window.TagoIO.ready();
 </script>
 
 </body>
