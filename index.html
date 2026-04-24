@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Auto Deportivo </title>
+<title>Auto Deportivo</title>
 
 <style>
 body {
@@ -14,7 +14,6 @@ body {
   background: #87ceeb;
 }
 
-/* Calle */
 .calle {
   position: absolute;
   bottom: 0;
@@ -37,7 +36,6 @@ body {
   );
 }
 
-/* 🚗 Auto */
 .auto {
   position: absolute;
   bottom: 120px;
@@ -45,7 +43,6 @@ body {
   transition: left 0.4s linear;
 }
 
-/* Cuerpo */
 .cuerpo {
   width: 120px;
   height: 40px;
@@ -54,7 +51,6 @@ body {
   position: relative;
 }
 
-/* Techo */
 .techo {
   width: 60px;
   height: 25px;
@@ -65,7 +61,6 @@ body {
   border-radius: 10px;
 }
 
-/* Ventana */
 .ventana {
   width: 40px;
   height: 15px;
@@ -76,7 +71,6 @@ body {
   border-radius: 5px;
 }
 
-/* Luces */
 .luz {
   width: 8px;
   height: 8px;
@@ -100,7 +94,6 @@ body {
   opacity: 0;
 }
 
-/* Ruedas */
 .rueda {
   width: 25px;
   height: 25px;
@@ -122,7 +115,6 @@ body {
   animation: girar 0.3s linear infinite;
 }
 
-/* 💨 Humo */
 .humo {
   position: absolute;
   left: -20px;
@@ -143,7 +135,6 @@ body {
   animation: humoAnim 1s infinite;
 }
 
-/* Texto */
 #distancia {
   margin-top: 20px;
   font-size: 22px;
@@ -153,18 +144,16 @@ body {
   font-size: 24px;
   margin-top: 10px;
 }
-
 </style>
 </head>
 
 <body>
 
 <h1>🏎️ Auto Deportivo Inteligente</h1>
-<div id="distancia">Cargando...</div>
+<div id="distancia">Conectando con ESP32...</div>
 <div id="estado"></div>
 
 <div class="auto" id="auto">
-
   <div class="cuerpo">
     <div class="techo">
       <div class="ventana"></div>
@@ -172,75 +161,61 @@ body {
     <div class="luz"></div>
     <div class="freno" id="freno"></div>
   </div>
-
   <div class="rueda r1" id="r1"></div>
   <div class="rueda r2" id="r2"></div>
-
   <div class="humo" id="humo"></div>
-
 </div>
 
 <div class="calle"></div>
 <div class="linea"></div>
-<script src="https://tago.io">
+
 <script>
 
-const token ="36a3de25-4d64-4f66-aab7-b5ca16161c78";
+// 🔑 TU TOKEN (debe coincidir con tu ESP32 en TagoIO)
+const token = "36a3de25-4d64-4f66-aab7-b5ca16161c78";
 
 function actualizar() {
-
-  fetch("https://api.tago.io/data?variable=distancia", {
-    headers: { "Device-Token": token }
+  fetch("https://api.tago.io/data?limit=1", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Device-Token": token
+    }
   })
   .then(res => res.json())
   .then(data => {
 
-    let d = data.result[0].value;
+    if (!data.result || data.result.length === 0) {
+      document.getElementById("distancia").innerHTML = "⚠️ Sin datos del ESP32";
+      return;
+    }
 
-    document.getElementById("distancia").innerHTML =
-      "Distancia: " + d + " cm";
+    let d = parseFloat(data.result[0].value);
+
+    document.getElementById("distancia").innerHTML = "Distancia: " + d.toFixed(1) + " cm";
 
     let auto = document.getElementById("auto");
     let estado = document.getElementById("estado");
     let freno = document.getElementById("freno");
     let humo = document.getElementById("humo");
-
     let r1 = document.getElementById("r1");
     let r2 = document.getElementById("r2");
 
-    // 👉 MOVIMIENTO COMPLETO DE IZQUIERDA A DERECHA
     let max = window.innerWidth - 150;
     let pos = (d / 100) * max;
-
-    if (pos < 0) pos = 0;
-    if (pos > max) pos = max;
-
+    pos = Math.max(0, Math.min(pos, max));
     auto.style.left = pos + "px";
 
-    // 🌙 modo noche
-    if (d < 20) {
-      document.body.style.background = "#0b1a2a";
-    } else {
-      document.body.style.background = "#87ceeb";
-    }
+    document.body.style.background = (d < 20) ? "#0b1a2a" : "#87ceeb";
 
-    // 🚨 comportamiento
     if (d < 15) {
       estado.innerHTML = "🚨 FRENANDO";
       freno.style.opacity = 1;
       humo.classList.remove("activo");
       r1.classList.remove("girando");
       r2.classList.remove("girando");
-    } 
-    else if (d < 30) {
-      estado.innerHTML = "⚠️ Acercándose";
-      freno.style.opacity = 0;
-      humo.classList.add("activo");
-      r1.classList.add("girando");
-      r2.classList.add("girando");
-    } 
-    else {
-      estado.innerHTML = "🟢 A TODA VELOCIDAD";
+    } else {
+      estado.innerHTML = (d < 30) ? "⚠️ Acercándose" : "🟢 A TODA VELOCIDAD";
       freno.style.opacity = 0;
       humo.classList.add("activo");
       r1.classList.add("girando");
@@ -248,11 +223,15 @@ function actualizar() {
     }
 
   })
-  .catch(err => console.log(err));
+  .catch(err => {
+    console.error("Error:", err);
+    document.getElementById("distancia").innerHTML = "❌ Error de conexión con TagoIO";
+  });
 }
 
-setInterval(actualizar, 700);
-window.TagoIO.ready();
+// 🔁 Actualiza cada segundo
+setInterval(actualizar, 1000);
+
 </script>
 
 </body>
