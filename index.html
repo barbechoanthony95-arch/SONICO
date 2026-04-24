@@ -153,18 +153,16 @@ body {
   font-size: 24px;
   margin-top: 10px;
 }
-
 </style>
 </head>
 
 <body>
 
 <h1>🏎️ Auto Deportivo Inteligente</h1>
-<div id="distancia">Cargando...</div>
+<div id="distancia">Conectando con ESP32...</div>
 <div id="estado"></div>
 
 <div class="auto" id="auto">
-
   <div class="cuerpo">
     <div class="techo">
       <div class="ventana"></div>
@@ -172,87 +170,67 @@ body {
     <div class="luz"></div>
     <div class="freno" id="freno"></div>
   </div>
-
   <div class="rueda r1" id="r1"></div>
   <div class="rueda r2" id="r2"></div>
-
   <div class="humo" id="humo"></div>
-
 </div>
 
 <div class="calle"></div>
 <div class="linea"></div>
-<script src="https://tago.io">
-<script>
 
-const token = "36a3de25-4d64-4f66-aab7-b5ca16161c78";
+<script>
+// ASEGÚRATE DE QUE ESTE TOKEN SEA EL MISMO QUE EN TU ARDUINO
+const token = "36a3de25-4d64-4f66-aab7-b5ca16161c78"; 
 
 function actualizar() {
-
-  fetch("https://api.tago.io/data?variable=distancia", {
+  fetch("https://tago.io", {
     headers: { "Device-Token": token }
   })
   .then(res => res.json())
   .then(data => {
+    if (data.result && data.result.length > 0) {
+      let d = parseFloat(data.result[0].value);
 
-    let d = data.result[0].value;
+      document.getElementById("distancia").innerHTML = "Distancia: " + d.toFixed(1) + " cm";
 
-    document.getElementById("distancia").innerHTML =
-      "Distancia: " + d + " cm";
+      let auto = document.getElementById("auto");
+      let estado = document.getElementById("estado");
+      let freno = document.getElementById("freno");
+      let humo = document.getElementById("humo");
+      let r1 = document.getElementById("r1");
+      let r2 = document.getElementById("r2");
 
-    let auto = document.getElementById("auto");
-    let estado = document.getElementById("estado");
-    let freno = document.getElementById("freno");
-    let humo = document.getElementById("humo");
+      // Movimiento: Si está a 100cm o más, está al final (derecha)
+      let max = window.innerWidth - 150;
+      let pos = (d / 100) * max;
+      if (pos < 0) pos = 0;
+      if (pos > max) pos = max;
+      auto.style.left = pos + "px";
 
-    let r1 = document.getElementById("r1");
-    let r2 = document.getElementById("r2");
+      // Modo noche
+      document.body.style.background = (d < 20) ? "#0b1a2a" : "#87ceeb";
 
-    // 👉 MOVIMIENTO COMPLETO DE IZQUIERDA A DERECHA
-    let max = window.innerWidth - 150;
-    let pos = (d / 100) * max;
-
-    if (pos < 0) pos = 0;
-    if (pos > max) pos = max;
-
-    auto.style.left = pos + "px";
-
-    // 🌙 modo noche
-    if (d < 20) {
-      document.body.style.background = "#0b1a2a";
-    } else {
-      document.body.style.background = "#87ceeb";
+      // Lógica de comportamiento
+      if (d < 15) {
+        estado.innerHTML = "🚨 FRENANDO";
+        freno.style.opacity = 1;
+        humo.classList.remove("activo");
+        r1.classList.remove("girando");
+        r2.classList.remove("girando");
+      } else {
+        estado.innerHTML = (d < 30) ? "⚠️ Acercándose" : "🟢 A TODA VELOCIDAD";
+        freno.style.opacity = 0;
+        humo.classList.add("activo");
+        r1.classList.add("girando");
+        r2.classList.add("girando");
+      }
     }
-
-    // 🚨 comportamiento
-    if (d < 15) {
-      estado.innerHTML = "🚨 FRENANDO";
-      freno.style.opacity = 1;
-      humo.classList.remove("activo");
-      r1.classList.remove("girando");
-      r2.classList.remove("girando");
-    } 
-    else if (d < 30) {
-      estado.innerHTML = "⚠️ Acercándose";
-      freno.style.opacity = 0;
-      humo.classList.add("activo");
-      r1.classList.add("girando");
-      r2.classList.add("girando");
-    } 
-    else {
-      estado.innerHTML = "🟢 A TODA VELOCIDAD";
-      freno.style.opacity = 0;
-      humo.classList.add("activo");
-      r1.classList.add("girando");
-      r2.classList.add("girando");
-    }
-
   })
-  .catch(err => console.log(err));
+  .catch(err => console.error("Error al obtener datos:", err));
 }
 
-setInterval(actualizar, 700);
-window.TagoIO.ready();
+// Se actualiza cada segundo
+setInterval(actualizar, 1000);
 </script>
 
 </body>
